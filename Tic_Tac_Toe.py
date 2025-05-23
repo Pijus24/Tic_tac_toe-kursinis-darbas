@@ -1,18 +1,19 @@
 import tkinter as tk
 from tkinter import messagebox
+from abc import ABC, abstractmethod
 
 class SingletonMeta(type):
     _instance = None
-
     def __call__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__call__(*args, **kwargs)
         return cls._instance
 
-class Player:
+class Player(ABC):
     def __init__(self, symbol):
         self.symbol = symbol
 
+    @abstractmethod
     def make_move(self, game_manager, index):
         pass
 
@@ -45,12 +46,12 @@ class GameBoard:
         return all(cell != "" for cell in self.state)
 
     def check_winner(self, symbol):
-        win_combos = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
+        combos = [
+            [0,1,2], [3,4,5], [6,7,8],
+            [0,3,6], [1,4,7], [2,5,8],
+            [0,4,8], [2,4,6]
         ]
-        return any(all(self.state[i] == symbol for i in combo) for combo in win_combos)
+        return any(all(self.state[i] == symbol for i in combo) for combo in combos)
 
     def reset(self):
         self.state = [""] * 9
@@ -61,7 +62,6 @@ class GameManager(metaclass=SingletonMeta):
         self.window = tk.Tk()
         self.window.title("Tic-Tac-Toe")
         self.buttons = []
-        self.current_player = None
         self.players = {
             "X": PlayerX("X"),
             "O": PlayerO("O")
@@ -74,16 +74,14 @@ class GameManager(metaclass=SingletonMeta):
         for i in range(9):
             button = tk.Button(self.window, text="", font=("Arial", 24), width=5, height=2,
                                command=lambda i=i: self.on_click(i))
-            button.grid(row=i // 3, column=i % 3)
+            button.grid(row=i//3, column=i%3)
             self.buttons.append(button)
 
-        history_button = tk.Button(self.window, text="View Match History", font=("Arial", 12),
-                                   command=self.show_match_history)
-        history_button.grid(row=3, column=0, columnspan=3, sticky="we")
+        tk.Button(self.window, text="View Match History", font=("Arial", 12),
+                  command=self.show_match_history).grid(row=3, column=0, columnspan=3, sticky="we")
 
-        clear_button = tk.Button(self.window, text="Clear Match History", font=("Arial", 12),
-                                 command=self.clear_match_history)
-        clear_button.grid(row=4, column=0, columnspan=3, sticky="we")
+        tk.Button(self.window, text="Clear Match History", font=("Arial", 12),
+                  command=self.clear_match_history).grid(row=4, column=0, columnspan=3, sticky="we")
 
     def on_click(self, index):
         self.current_player.make_move(self, index)
@@ -109,10 +107,7 @@ class GameManager(metaclass=SingletonMeta):
         try:
             with open("results.txt", "r") as file:
                 data = file.read()
-                if data.strip():
-                    messagebox.showinfo("Match History", data)
-                else:
-                    messagebox.showinfo("Match History", "No games played yet.")
+                messagebox.showinfo("Match History", data if data.strip() else "No games played yet.")
         except FileNotFoundError:
             messagebox.showinfo("Match History", "No history file found.")
 
@@ -132,7 +127,8 @@ class GameManager(metaclass=SingletonMeta):
         self.window.mainloop()
 
 if __name__ == "__main__":
-    game_board = GameBoard()
-    game = GameManager(game_board)
+    board = GameBoard()
+    game = GameManager(board)
     game.run()
+
 
