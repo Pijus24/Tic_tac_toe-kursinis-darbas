@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import messagebox
 
+class SingletonMeta(type):
+    _instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__call__(*args, **kwargs)
+        return cls._instance
+
 class Player:
     def __init__(self, symbol):
         self.symbol = symbol
@@ -47,7 +55,7 @@ class GameBoard:
     def reset(self):
         self.state = [""] * 9
 
-class GameManager:
+class GameManager(metaclass=SingletonMeta):
     def __init__(self, board):
         self.board = board
         self.window = tk.Tk()
@@ -127,3 +135,4 @@ if __name__ == "__main__":
     game_board = GameBoard()
     game = GameManager(game_board)
     game.run()
+
